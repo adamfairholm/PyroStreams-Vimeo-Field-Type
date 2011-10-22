@@ -38,6 +38,37 @@ class Field_vimeo
 		
 		return form_input( $options );
 	}
+	
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Pre Save
+	 *
+	 * Turn the URL into a Vimeo ID if need be
+	 *
+	 * @access	public
+	 */
+	public function pre_save($input)
+	{
+		// Did they just give the ID? Cool. Our work here is done.
+		// Vimeo IDs are numeric.
+		if(is_numeric($input)) return $input;
+	
+		// Find and return the URL:
+		$url = parse_url($input);
+	
+		if( isset($url['path']) ):
+		
+			$segs = explode('/', $url['path']);
+		
+			if(is_numeric($segs[1])): return $segs[1]; endif;
+		
+		else:
+		
+			return null;
+		
+		endif;
+	}
 
 	// --------------------------------------------------------------------------
 
@@ -72,7 +103,16 @@ class Field_vimeo
 	{
 		$choices = array();
 		
-		$xml_data = unserialize(file_get_contents("http://vimeo.com/api/v2/video/$input.php"));
+		$url = "http://vimeo.com/api/v2/video/{$input}.php";
+		
+		$ch = curl_init();
+		curl_setopt($ch,CURLOPT_URL,$url);
+		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+		
+		$data = curl_exec($ch);
+		curl_close($ch);
+		
+		$xml_data = unserialize($data);
 		
 		if( !is_array($xml_data) || !isset($xml_data[0])):
 		
