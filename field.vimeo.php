@@ -7,18 +7,24 @@
  *
  * For use with PyroStreams for PyroCMS
  *
+ * @todo 		Validate that it is in fact a Vimeo URL or ID
+ * @todo 		Create a 2.2 version that uses plugin_override so you can set the
+ * 					cache time manually.
+ *
  * @package		PyroStreams Vimeo Field Type
- * @author		Addict Add-ons Dev Team
- * @copyright	Copyright (c) 2011, Addict Add-ons
- * @link		http://addictaddons.com
+ * @author		Adam Fairholm
+ * @copyright	Copyright (c) 2011-2012, Adam Fairholm
+ * @link		https://github.com/adamfairholm/PyroStreams-Vimeo-Field-Type
  */
 class Field_vimeo
-{
-	var $field_type_name 			= 'Vimeo Video';
+{	
+	public $field_type_slug			= 'vimeo';
 	
-	var $field_type_slug			= 'vimeo';
-	
-	var $db_col_type				= 'varchar';
+	public $db_col_type				= 'varchar';
+
+	public $version					= '1.1';
+
+	public $author					= array('name' => 'Adam Fairholm', 'url' => 'http://www.adamfairholm.com');
 	
 	// --------------------------------------------------------------------------
 
@@ -30,13 +36,15 @@ class Field_vimeo
 	 * @param	array
 	 * @return	string
 	 */
-	public function form_output( $data )
+	public function form_output($data)
 	{
-		$options['name'] 	= $data['form_slug'];
-		$options['id']		= $data['form_slug'];
-		$options['value']	= $data['value'];
+		$options = array(
+			'name'	=> $data['form_slug'],
+			'id'	=> $data['form_slug'],
+			'value'	=> $data['value']
+		);
 		
-		return form_input( $options );
+		return form_input($options);
 	}
 	
 	// --------------------------------------------------------------------------
@@ -47,27 +55,31 @@ class Field_vimeo
 	 * Turn the URL into a Vimeo ID if need be
 	 *
 	 * @access	public
+	 * @param 	string - the input value
+	 * @return  mixed - string or null
 	 */
 	public function pre_save($input)
 	{
 		// Did they just give the ID? Cool. Our work here is done.
 		// Vimeo IDs are numeric.
-		if(is_numeric($input)) return $input;
+		if (is_numeric($input)) return $input;
 	
 		// Find and return the URL:
 		$url = parse_url($input);
 	
-		if( isset($url['path']) ):
-		
+		if (isset($url['path']))
+		{
 			$segs = explode('/', $url['path']);
 		
-			if(is_numeric($segs[1])): return $segs[1]; endif;
-		
-		else:
-		
+			if (is_numeric($segs[1]))
+			{
+				return $segs[1];
+			}
+		}
+		else
+		{
 			return null;
-		
-		endif;
+		}
 	}
 
 	// --------------------------------------------------------------------------
@@ -79,7 +91,7 @@ class Field_vimeo
 	 * @param	array
 	 * @return	string
 	 */
-	public function pre_output( $input, $data )
+	public function pre_output($input, $data)
 	{
 		return $input;
 	}
@@ -99,8 +111,48 @@ class Field_vimeo
 	 * @param	array
 	 * @return	array
 	 */
-	function pre_output_plugin( $prefix, $input, $params )
+	public function pre_output_plugin($input, $params)
 	{
+		if ( ! $input)
+		{
+			return null;
+		}
+
+		// --------------------------------
+		// Cache
+		// --------------------------------
+
+		// Cache
+		// See @todo above.
+		$cache = 9000;
+
+		// Should we be writing the cache?
+		$write_cache = false;
+
+		if (is_numeric($cache))
+		{
+			// For the cache hash, we'll just use the
+			// Vimeo ID that we have.
+			$cache_hash = md5($input);
+
+			// Cache path. Follows the convention of:
+			// fieldtypes/field_type_slug/*cache files*
+			$cache_file = 'fieldtypes'.DIRECTORY_SEPARATOR.'vimeo'.DIRECTORY_SEPARATOR.$cache_hash;
+
+			// Now matter what, we'll need to write the
+			// cache if the situation arises.
+			$write_cache = true;
+
+			if ($tag_cache_content = $this->CI->pyrocache->get($cache_file))
+			{
+				return (array)json_decode($tag_cache_content);
+			}			
+		}
+
+		// --------------------------------
+		// Pull data from the API
+		// --------------------------------
+
 		$choices = array();
 		
 		$url = "http://vimeo.com/api/v2/video/{$input}.php";
@@ -113,41 +165,85 @@ class Field_vimeo
 		curl_close($ch);
 		
 		$xml_data = unserialize($data);
+
+		$choices = array();
 		
-		if( !is_array($xml_data) || !isset($xml_data[0])):
-		
-			return $choices[$prefix.'title'] = 'Video Not Found';
-		
-		endif;
+		if ( !is_array($xml_data) or ! isset($xml_data[0]))
+		{
+			return $choices['title'] = 'Video Not Found';
+		}
 		
 		$video_data = $xml_data[0];
 		
-		$choices[$prefix.'vimeo_id'] 				= $video_data['id'];
-		$choices[$prefix.'title'] 					= $video_data['title'];
-		$choices[$prefix.'url_title'] 				= url_title($video_data['title'], 'dash', TRUE);
-		$choices[$prefix.'description'] 			= $video_data['description'];
-		$choices[$prefix.'desc_no_html'] 			= strip_tags($video_data['description']);
-		$choices[$prefix.'vimeo_url'] 				= $video_data['url'];
-		$choices[$prefix.'thumb_small'] 			= $video_data['thumbnail_small'];
-		$choices[$prefix.'thumb_medium'] 			= $video_data['thumbnail_medium'];
-		$choices[$prefix.'thumb_large'] 			= $video_data['thumbnail_large'];
-        $choices[$prefix.'user_name'] 				= $video_data['user_name'];
-        $choices[$prefix.'user_url'] 				= $video_data['user_url'];
-        $choices[$prefix.'user_portrait_small'] 	= $video_data['user_portrait_small'];
-       	$choices[$prefix.'user_portrait_medium'] 	= $video_data['user_portrait_medium'];
-        $choices[$prefix.'user_portrait_large'] 	= $video_data['user_portrait_large'];
-        $choices[$prefix.'user_portrait_huge'] 		= $video_data['user_portrait_huge'];
-        $choices[$prefix.'number_of_likes'] 		= $video_data['stats_number_of_likes'];
-        $choices[$prefix.'number_of_plays'] 		= $video_data['stats_number_of_plays'];
-       	$choices[$prefix.'number_of_comments'] 		= $video_data['stats_number_of_comments'];
-       	$choices[$prefix.'duration'] 				= $video_data['duration'];
-        $choices[$prefix.'width'] 					= $video_data['width'];
-        $choices[$prefix.'height'] 					= $video_data['height'];
-        $choices[$prefix.'tags'] 					= $video_data['tags']; 
-		
+		$choices['vimeo_id'] 				= $video_data['id'];
+		$choices['title'] 					= $video_data['title'];
+		$choices['url_title'] 				= url_title($video_data['title'], 'dash', TRUE);
+		$choices['description'] 			= $video_data['description'];
+		$choices['desc_no_html'] 			= strip_tags($video_data['description']);
+		$choices['vimeo_url'] 				= $video_data['url'];
+		$choices['thumb_small'] 			= $video_data['thumbnail_small'];
+		$choices['thumb_medium'] 			= $video_data['thumbnail_medium'];
+		$choices['thumb_large'] 			= $video_data['thumbnail_large'];
+        $choices['user_name'] 				= $video_data['user_name'];
+        $choices['user_url'] 				= $video_data['user_url'];
+        $choices['user_portrait_small'] 	= $video_data['user_portrait_small'];
+       	$choices['user_portrait_medium'] 	= $video_data['user_portrait_medium'];
+        $choices['user_portrait_large'] 	= $video_data['user_portrait_large'];
+        $choices['user_portrait_huge'] 		= $video_data['user_portrait_huge'];
+        $choices['number_of_likes'] 		= $video_data['stats_number_of_likes'];
+        $choices['number_of_plays'] 		= $video_data['stats_number_of_plays'];
+       	$choices['number_of_comments'] 		= $video_data['stats_number_of_comments'];
+       	$choices['duration'] 				= $this->format_duration($video_data['duration']);
+        $choices['width'] 					= $video_data['width'];
+        $choices['height'] 					= $video_data['height'];
+        $choices['tags_string']				= $video_data['tags'];
+
+        if ($video_data['tags'])
+        {
+        	$tags = explode(',', $video_data['tags']);
+
+        	foreach ($tags as $tag)
+        	{
+        		$choices['tags'][] = array('tag' => trim($tag));
+        	}
+        }
+        else
+        {
+        	$choices['tags'] = array();
+        }
+
+        // Write cache
+        if ($write_cache)
+        {
+			$this->CI->pyrocache->write(json_encode($choices), $cache_file, $cache);
+        }
+
 		return $choices;
 	}
 
-}
+	// --------------------------------------------------------------------------
 
-/* End of file field.vimeo.php */
+	/**
+	 * Format seconds to time duration.
+	 *
+	 * http://stackoverflow.com/questions/3856293/how-to-convert-seconds-to-time-format
+	 *
+	 * @access 	private
+	 * @param 	int - seconds
+	 * @return 	string - formatted time
+	 */
+	private function format_duration($seconds)
+	{
+		$minutes = floor($seconds/60);
+
+		$seconds = $seconds%($minutes*60);
+
+		if (strlen($seconds) == 1)
+		{
+			$seconds = '0'.$seconds;
+		}
+
+		return $minutes.':'.$seconds;
+	}
+
+}
