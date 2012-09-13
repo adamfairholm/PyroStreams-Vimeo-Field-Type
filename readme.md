@@ -11,7 +11,7 @@ Download from GitHub, and rename the folder to "vimeo". Put this into your addon
 <table>
 
 	<tr>
-		<td>MySQL ColumN Type</td>
+		<td>MySQL Column Type</td>
 		<td>VARCHAR</td>
 	</tr>
 	<tr>
