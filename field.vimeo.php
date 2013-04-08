@@ -46,6 +46,15 @@ class Field_vimeo
 	public $author					= array('name' => 'Adam Fairholm', 'url' => 'http://www.adamfairholm.com');
 	
 	/**
+	 * Cache Time
+	 *
+	 * In Seconds
+	 *
+	 * @var 	int
+	 */
+	public $cacheTime 				= 9000;
+
+	/**
 	 * Output form input
 	 *
 	 * @param	array $data
@@ -116,14 +125,10 @@ class Field_vimeo
 		// Cache
 		// --------------------------------
 
-		// Cache
-		// See @todo above.
-		$cache = 9000;
-
 		// Should we be writing the cache?
 		$write_cache = false;
 
-		if (is_numeric($cache))
+		if (is_numeric($this->cacheTime))
 		{
 			// For the cache hash, we'll just use the
 			// Vimeo ID that we have.
@@ -137,8 +142,7 @@ class Field_vimeo
 			// cache if the situation arises.
 			$write_cache = true;
 
-			if ($tag_cache_content = $this->CI->pyrocache->get($cache_file))
-			{
+			if ($tag_cache_content = $this->CI->pyrocache->get($cache_file)) {
 				return (array)json_decode($tag_cache_content);
 			}			
 		}
@@ -152,8 +156,8 @@ class Field_vimeo
 		$url = "http://vimeo.com/api/v2/video/{$input}.php";
 		
 		$ch = curl_init();
-		curl_setopt($ch,CURLOPT_URL,$url);
-		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		
 		$data = curl_exec($ch);
 		curl_close($ch);
@@ -204,7 +208,7 @@ class Field_vimeo
 
         // Write cache
         if ($write_cache) {
-			$this->CI->pyrocache->write(json_encode($choices), $cache_file, $cache);
+			$this->CI->pyrocache->write(json_encode($choices), $cache_file, $this->cacheTime);
         }
 
 		return $choices;

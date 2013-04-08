@@ -155,7 +155,7 @@ The following variables are available to you from the Vimeo API:
 
 ## API Call Caching
 
-In version 1.1, cache is set manually to 150 minutes.
+The cache is set manually to 150 minutes. You can change the cache time using the `$cacheTime` class variable.
 
 ## Note about Image Caching
 
