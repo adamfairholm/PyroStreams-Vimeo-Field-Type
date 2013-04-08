@@ -1,4 +1,4 @@
-# PyroStreams Vimeo Field Type
+# PyroStreams Vimeo Field Type 1.2.0
 
 This is a simple field type that allows you to provide a Vimeo URL or ID in your PyroStreams form, and get back information about the video to use in your templates (acquired via the Vimeo API).
 
@@ -11,15 +11,21 @@ Download from GitHub, and rename the folder to "vimeo". Put this into your addon
 <table>
 
 	<tr>
+		<td>Compatability</td>
+		<td>PyroCMS 2.2</td>
+	</tr>
+	<tr>
 		<td>MySQL Column Type</td>
 		<td>VARCHAR</td>
 	</tr>
-	<tr>
-		<td>Compatible with Grid?</td>
-		<td>Yes</td>
-	</tr>
 
 </table>
+
+## Change Log
+
+** 1.2.0 - April 8, 2013 **
+
+* Updated the syntax to be compatible with PyroCMS 2.2
 
 ## Displaying Vimeo Data
 
@@ -34,7 +40,7 @@ You can use Vimeo data in your template by using your field slug as a tag pair. 
 
 ### Tags
 
-The video tags are an array of tags, so you can access them in a loop:
+The Vimeo video tags is an array, so you can access them in a loop:
 
 	{{ my_video:tags }}
 
@@ -43,6 +49,8 @@ The video tags are an array of tags, so you can access them in a loop:
 	{{ /my_video:tags }}
 
 If you don't want to have to deal with looping through the tags, the *tag\_string* variable has all the tags in a string separated by commas.
+
+	My video tags: {{ tag_string }}
 
 ## Vimeo Variables
 
@@ -147,7 +155,7 @@ The following variables are available to you from the Vimeo API:
 
 ## API Call Caching
 
-In version 1.1, cache is set manually to 150 minutes. In version 1.2, which will work with PyroCMS 2.2, you will be able to set the cache via a tag.
+In version 1.1, cache is set manually to 150 minutes.
 
 ## Note about Image Caching
 

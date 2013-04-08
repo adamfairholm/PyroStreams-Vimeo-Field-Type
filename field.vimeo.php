@@ -1,39 +1,54 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Vimeo Field Type
+ * PyroStreams Vimeo Field Type
  *
  * Uses the Vimeo API to get Vimeo video data based on an ID.
  *
  * For use with PyroStreams for PyroCMS
  *
- * @todo 		Validate that it is in fact a Vimeo URL or ID
- * @todo 		Create a 2.2 version that uses plugin_override so you can set the
- * 					cache time manually.
- *
  * @package		PyroStreams Vimeo Field Type
  * @author		Adam Fairholm
- * @copyright	Copyright (c) 2011-2012, Adam Fairholm
+ * @copyright	Copyright (c) 2011-2013, Adam Fairholm
  * @link		https://github.com/adamfairholm/PyroStreams-Vimeo-Field-Type
  */
 class Field_vimeo
-{	
+{
+	/**
+	 * Field Type Slug
+	 *
+	 * @var 	string
+	 */
 	public $field_type_slug			= 'vimeo';
 	
+	/**
+	 * Db Column Type
+	 *
+	 * We are saving the Vimeo ID
+	 * in this case in a varchar.
+	 *
+	 * @var 	string
+	 */
 	public $db_col_type				= 'varchar';
 
-	public $version					= '1.1';
+	/**
+	 * Version
+	 *
+	 * @var 	string
+	 */
+	public $version					= '1.2.0';
 
+	/**
+	 * Author
+	 *
+	 * @var 	array
+	 */
 	public $author					= array('name' => 'Adam Fairholm', 'url' => 'http://www.adamfairholm.com');
 	
-	// --------------------------------------------------------------------------
-
 	/**
 	 * Output form input
 	 *
-	 * @access	public
-	 * @param	array
-	 * @param	array
+	 * @param	array $data
 	 * @return	string
 	 */
 	public function form_output($data)
@@ -47,65 +62,45 @@ class Field_vimeo
 		return form_input($options);
 	}
 	
-	// --------------------------------------------------------------------------
-
 	/**
 	 * Pre Save
 	 *
 	 * Turn the URL into a Vimeo ID if need be
 	 *
-	 * @access	public
-	 * @param 	string - the input value
-	 * @return  mixed - string or null
+	 * @param 	string $input the input value
+	 * @return  mixed string or null
 	 */
 	public function pre_save($input)
 	{
 		// Did they just give the ID? Cool. Our work here is done.
 		// Vimeo IDs are numeric.
-		if (is_numeric($input)) return $input;
-	
+		if (is_numeric($input)) {
+			return $input;
+		}
+
 		// Find and return the URL:
 		$url = parse_url($input);
 	
-		if (isset($url['path']))
-		{
+		if (isset($url['path'])) {
+
 			$segs = explode('/', $url['path']);
 		
 			if (is_numeric($segs[1]))
 			{
 				return $segs[1];
 			}
-		}
-		else
-		{
+		} else {
 			return null;
 		}
 	}
-
-	// --------------------------------------------------------------------------
-
-	/**
-	 * Process before outputting
-	 *
-	 * @access	public
-	 * @param	array
-	 * @return	string
-	 */
-	public function pre_output($input, $data)
-	{
-		return $input;
-	}
-
-	// --------------------------------------------------------------------------
 
 	/**
 	 * Process before outputting for the plugin
 	 *
 	 * This creates an array of data to be merged with the
 	 * tag array so relationship data can be called with
-	 * a {field.column} syntax
+	 * a {{ field:column }} syntax
 	 *
-	 * @access	public
 	 * @param	string
 	 * @param	string
 	 * @param	array
@@ -113,8 +108,7 @@ class Field_vimeo
 	 */
 	public function pre_output_plugin($input, $params)
 	{
-		if ( ! $input)
-		{
+		if ( ! $input) {
 			return null;
 		}
 
@@ -168,8 +162,7 @@ class Field_vimeo
 
 		$choices = array();
 		
-		if ( !is_array($xml_data) or ! isset($xml_data[0]))
-		{
+		if ( !is_array($xml_data) or ! isset($xml_data[0])) {
 			return $choices['title'] = 'Video Not Found';
 		}
 		
@@ -198,39 +191,32 @@ class Field_vimeo
         $choices['height'] 					= $video_data['height'];
         $choices['tags_string']				= $video_data['tags'];
 
-        if ($video_data['tags'])
-        {
+        if ($video_data['tags']) {
         	$tags = explode(',', $video_data['tags']);
 
         	foreach ($tags as $tag)
         	{
         		$choices['tags'][] = array('tag' => trim($tag));
         	}
-        }
-        else
-        {
+        } else {
         	$choices['tags'] = array();
         }
 
         // Write cache
-        if ($write_cache)
-        {
+        if ($write_cache) {
 			$this->CI->pyrocache->write(json_encode($choices), $cache_file, $cache);
         }
 
 		return $choices;
 	}
 
-	// --------------------------------------------------------------------------
-
 	/**
 	 * Format seconds to time duration.
 	 *
 	 * http://stackoverflow.com/questions/3856293/how-to-convert-seconds-to-time-format
 	 *
-	 * @access 	private
-	 * @param 	int - seconds
-	 * @return 	string - formatted time
+	 * @param 	int $seconds
+	 * @return 	string formatted time
 	 */
 	private function format_duration($seconds)
 	{
@@ -238,8 +224,7 @@ class Field_vimeo
 
 		$seconds = $seconds%($minutes*60);
 
-		if (strlen($seconds) == 1)
-		{
+		if (strlen($seconds) == 1) {
 			$seconds = '0'.$seconds;
 		}
 

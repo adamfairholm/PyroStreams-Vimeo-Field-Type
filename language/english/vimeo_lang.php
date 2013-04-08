@@ -1,3 +1,3 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed');
 
-$lang['streams.vimeo.name'] 			= 'Vimeo';
+$lang['streams:vimeo.name'] 			= 'Vimeo';
