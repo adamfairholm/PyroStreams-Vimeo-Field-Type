@@ -23,7 +23,7 @@ Download from GitHub, and rename the folder to "vimeo". Put this into your addon
 
 ## Change Log
 
-** 1.2.0 - April 8, 2013 **
+**1.2.0 - April 8, 2013**
 
 * Updated the syntax to be compatible with PyroCMS 2.2
 
